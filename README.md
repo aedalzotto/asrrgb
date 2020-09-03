@@ -15,6 +15,12 @@ Check the usage running
 
 To run as a normal user, give the udev permissions copying the file `60-asrrgb.rules` to `/etc/udev/rules.d/`.
 
+## Installation
+
+### Arch Linux
+
+There is a `asrrgb-bin` package in AUR.
+
 ## Compiling from source
 
 You will need:
