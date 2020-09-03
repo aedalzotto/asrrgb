@@ -75,7 +75,7 @@ private:
 	std::string region;
 	std::string mode;
 	std::string color;
-	uint8_t speed;
+	int speed;
 	uint8_t all;
 
 	bool no_speed;

@@ -35,7 +35,7 @@ Cmdline::Cmdline(int argc, char *argv[]) :
 		("region", po::value<std::string>(&region)->default_value("all"), "region to change the lights: hdr0, hdr1, ahdr0, ahdr1, pch, io, audio, pcb or all")
 		("mode", po::value<std::string>(&mode)->default_value("static"), "mode of illumination: off, static, breath, strobe, cycle, rand, wave, spring, stack, cram, scan, neon, water or rainbow")
 		("color", po::value<std::string>(&color)->default_value("ffffff"), "hex code of the color, ignored case mode is off, cycle, rand, wave, water or rainbow")
-		("speed", po::value<uint8_t>(&speed)->default_value(50), "0 to 100 speed of the mode, ignored for off and static")
+		("speed", po::value<int>(&speed)->default_value(50), "0 to 100 speed of the mode, ignored for off and static")
 	;
 
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -176,11 +176,11 @@ uint8_t Cmdline::get_speed()
 {
 	if(no_speed){
 		return 0x80;
-	} else if(speed > 100){
+	} else if(speed > 100 || speed < 0){
 		throw std::invalid_argument("invalid speed");
 	}
 
-	return speed * 255 / 100;
+	return (speed * 255 / 100 - 255) * -1;
 }
 
 uint8_t Cmdline::get_all()
