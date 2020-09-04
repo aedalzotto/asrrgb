@@ -10,14 +10,15 @@ Write to endpoint 2, read from endpoint 1.
 ## Configurable fields
 
 ### Available commands
-| Code (hex) |             COMMAND              |
-|:----------:|:--------------------------------:|
-|     10     |              WRITE               |
-|     11     |               READ               |
-|     14     |            READ HEADER           |
-|     15     |           WRITE HEADER           |
-|     a4     |           UNIDENTIFIED           |
-|    a6/00   | ANSWER (depending on fw version) |
+| Code (hex) |    COMMAND   |
+|:----------:|:------------:|
+|     10     |     WRITE    |
+|     11     |     READ     |
+|     12     |     EXIT     |
+|     14     |  READ HEADER |
+|     15     | WRITE HEADER |
+|     a4     | UNIDENTIFIED |
+|     a6     |    ANSWER    |
 
 ### Region identification
 | Code (hex) |         REGION         |
@@ -119,8 +120,8 @@ This command reads the value of the specific region requested.
 
 The device answers with the region confirmation, the selected mode, colors, speed and if all regions are synchronized.
 
-| ANSWER | 00 | REGION | MODE | R | G | B | SPEED | ff | ALL |
-|:------:|:--:|:------:|:----:|:-:|:-:|:-:|:-----:|:--:|:---:|
+| a6 (ANSWER) | 00 | REGION | MODE | R | G | B | SPEED | ff | ALL |
+|:-----------:|:--:|:------:|:----:|:-:|:-:|:-:|:-----:|:--:|:---:|
 
 ### Write
 This command writes the R, G, B, colors with the MODE selected at SPEED, optionally syncing all other regions with the field ALL.
@@ -132,8 +133,8 @@ In case the mode is Off, Cycling, Random, Wave, Water and Rainbow, the colors wi
 
 The device sends a confirmation
 
-| ANSWER | 00 | 00 (?) | 07 (OK?) |
-|:------:|:--:|:------:|:--------:|
+| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
+|:-----------:|:--:|:------:|:--------:|
 
 ### Read header
 This command reads the addressable and non-addressable headers configurations:
@@ -143,8 +144,8 @@ This command reads the addressable and non-addressable headers configurations:
 
 The device sends the answer still unknown.
 
-| ANSWER | 00 | 00 (?) | 01 (?) | 3f (?) |
-|:------:|:--:|:------:|:------:|:------:|
+| a6 (ANSWER) | 00 | 00 (?) | 01 (?) | 3f (?) |
+|:-----------:|:--:|:------:|:------:|:------:|
 
 This command reads the addressable headers configured addresses:
 
@@ -153,8 +154,8 @@ This command reads the addressable headers configured addresses:
 
 The device answers in the following format:
 
-| ANSWER | 00 | 00 (?) | 02 (ADDRESS CFG) | 01 (?) | 01 (?) | ahdr0 ADDRESS | ahdr1 ADDRESS | 05 (?) | 07 (?) | 1e (?) | 1e (?) |
-|:------:|:--:|:------:|:----------------:|:------:|:------:|:-------------:|:-------------:|:------:|:------:|:------:|:------:|
+| a6 (ANSWER) | 00 | 00 (?) | 02 (ADDRESS CFG) | 01 (?) | 01 (?) | ahdr0 ADDRESS | ahdr1 ADDRESS | 05 (?) | 07 (?) | 1e (?) | 1e (?) |
+|:-----------:|:--:|:------:|:----------------:|:------:|:------:|:-------------:|:-------------:|:------:|:------:|:------:|:------:|
 
 This command reads the headers RG swap:
 
@@ -163,8 +164,8 @@ This command reads the headers RG swap:
 
 The device answers in the following format, see above the RGSwap identification for more information.
 
-| ANSWER | 00 | 00 (?) | 03 (RGSWAP CFG) | RGSwap |
-|:------:|:--:|:------:|:---------------:|:------:|
+| a6 (ANSWER) | 00 | 00 (?) | 03 (RGSWAP CFG) | RGSwap |
+|:-----------:|:--:|:------:|:---------------:|:------:|
 
 ### Write header
 This command configures the addressable and non-addressable headers RGSwap and selected addresses (when applied).
@@ -176,8 +177,8 @@ To configure the addresses, where ahdr0 ADDRESS and ahdr1 ADDRESS are the adress
 
 The device sends a confirmation
 
-| ANSWER | 00 | 00 (?) | 07 (OK?) |
-|:------:|:--:|:------:|:--------:|
+| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
+|:-----------:|:--:|:------:|:--------:|
 
 To configure the RGSwap, send the following command:
 | 15 (WRITE HDR) | 00 | 00 (?) | 03 (RGSWAP CFG) | RGSWAP |
@@ -185,8 +186,15 @@ To configure the RGSwap, send the following command:
 
 The device sends a confirmation
 
-| ANSWER | 00 | 00 (?) | 07 (OK?) |
-|:------:|:--:|:------:|:--------:|
+| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
+|:-----------:|:--:|:------:|:--------:|
+
+### Exit
+
+On Polychrome Sync exit, it sends the device a command:
+
+| 12 (EXIT) |
+|:---------:|
 
 ### Command a4
 This is not yet identified. This is the first command to run when the Polychrome Sync software is initialized.
@@ -194,10 +202,24 @@ This is not yet identified. This is the first command to run when the Polychrome
 | a4 (?) | 00 | 00 (?) | 01 (?) | 00 (?) | 00 (?) | 00 (?) | 01 (?) |
 |:------:|:--:|:------:|:------:|:------:|:------:|:------:|:------:|
 
-The answer received in the ASRock B550 Steel Legend is:
+The answer received in the ASRock B550 Steel Legend with Polychrome Sync v2.62 is:
 
-| ANSWER | 00 | 00 (?) | 00 (?) | 02 (?) |
-|:------:|:--:|:------:|:------:|:------:|
+| a6 (ANSWER) | 00 | 00 (?) | 00 (?) | 02 (?) |
+|:-----------:|:--:|:------:|:------:|:------:|
+
+and the aswer received in the ASRock B550 Steel Legend with Polychrome Sync v2.66 (beta), after suffering a firmware update is:
+
+| a6 (ANSWER) | 00 | 00 (?) | 00 (?) | 02 (?) |
+|:-----------:|:--:|:------:|:------:|:------:|
+
+So this probably isn't the firmware version.
+
+Sometimes the device answers like this:
+
+| a6 (ANSWER) | 00 | 00 (?) | 07 (?) | 02 (?) |
+|:-----------:|:--:|:------:|:------:|:------:|
+
+And it triggers a whole new type of packets, in the end resulting in a ABORT_PIPE, and making the Polychrome Sync software querying the device again.
 
 ## The Music protocol
 In this mode, the Polychrome Sync software reads the sound output of the operating system and adds a byte with the corresponding intensity calculated by the program with an additional byte to the WRITE command. This is sent every 50\~60ms (16.66\~20Hz).
@@ -207,5 +229,5 @@ In this mode, the Polychrome Sync software reads the sound output of the operati
 
 The device sends a confirmation
 
-| ANSWER | 00 | 00 (?) | 07 (OK?) |
-|:------:|:--:|:------:|:--------:|
+| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
+|:-----------:|:--:|:------:|:--------:|
