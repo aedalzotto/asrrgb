@@ -5,16 +5,19 @@ Reverse engineering of the protocol used for Polychrome Sync in ASRock B550 and 
 The ASRock B550 and TRX40 boards moved the SMBus connected microcontroller to a Nuvoton NUC121ZC2 ARM microcontroller connected to USB.
 This device is responsible for controlling the RGB illumination of the motherboard in up to 8 distinct regions, on/off mode plus 13 special effects independent for each region.
 
+Write to endpoint 2, read from endpoint 1.
+
 ## Configurable fields
 
 ### Available commands
-| Code (hex) |    COMMAND   |
-|:----------:|:------------:|
-|     10     |     WRITE    |
-|     11     |     READ     |
-|     14     | UNIDENTIFIED |
-|     a4     | UNIDENTIFIED |
-|     a6     |    ANSWER    |
+| Code (hex) |             COMMAND              |
+|:----------:|:--------------------------------:|
+|     10     |              WRITE               |
+|     11     |               READ               |
+|     14     |            READ HEADER           |
+|     15     |           WRITE HEADER           |
+|     a4     |           UNIDENTIFIED           |
+|    a6/00   | ANSWER (depending on fw version) |
 
 ### Region identification
 | Code (hex) |         REGION         |
@@ -64,6 +67,36 @@ The speed of the special effects is controlled by 1 byte. Maximum speed is set b
 ### ALL identification
 It is possible to write to all regions in a single command setting a byte to 1. This way, the region field will be ignored and the same mode, color and speed will be applied to all 7 regions. To manipulate regions individually, set this field to 0.
 
+### Header options
+The addressable header command has some options:
+| Code (hex) |    OPTION    |
+|:----------:|:------------:|
+|     01     | UNIDENTIFIED |
+|     02     |  ADDRESS CFG |
+|     03     |  RGSWAP CFG  |
+
+### RG Swap identification
+All 2 non-addressable headers and the 2 addressable ones are capable of RG swapping accordingly to the table below:
+
+| Code (hex) | ahdr1 | ahdr0 | hdr1 | hdr0 |
+|:----------:|:-----:|:-----:|:----:|:----:|
+|     40     |   NO  |   NO  |  NO  |  NO  |
+|     41     |   NO  |   NO  |  NO  |  YES |
+|     42     |   NO  |   NO  |  YES |  NO  |
+|     43     |   NO  |   NO  |  YES |  YES |
+|     44     |   NO  |  YES  |  NO  |  NO  |
+|     45     |   NO  |  YES  |  NO  |  YES |
+|     46     |   NO  |  YES  |  YES |  NO  |
+|     47     |   NO  |  YES  |  YES |  YES |
+|     48     |  YES  |   NO  |  NO  |  NO  |
+|     49     |  YES  |   NO  |  NO  |  YES |
+|     4a     |  YES  |   NO  |  YES |  NO  |
+|     4b     |  YES  |   NO  |  YES |  YES |
+|     4c     |  YES  |  YES  |  NO  |  NO  |
+|     4d     |  YES  |  YES  |  NO  |  YES |
+|     4e     |  YES  |  YES  |  YES |  NO  |
+|     4f     |  YES  |  YES  |  YES |  YES |
+
 ### Other fields
 
 #### Second command byte
@@ -72,8 +105,8 @@ This byte is always 0.
 #### READ/WRITE second-least byte
 This byte is always ff in READ and WRITE modes.
 
-#### a4 and 14 commands
-These commands are sent on Polychrome Sync software initialization. All of it's fiels are unidentified.
+#### a4 command
+This commands are sent on Polychrome Sync software initialization. All of it's fiels are unidentified.
 
 ## Command details
 All commands must have 64 bytes. The padding is made by zeroed bytes.
@@ -86,8 +119,8 @@ This command reads the value of the specific region requested.
 
 The device answers with the region confirmation, the selected mode, colors, speed and if all regions are synchronized.
 
-| a6 (ANSWER) | 00 | REGION | MODE | R | G | B | SPEED | ff | ALL |
-|:-----------:|:--:|:------:|:----:|:-:|:-:|:-:|:-----:|:--:|:---:|
+| ANSWER | 00 | REGION | MODE | R | G | B | SPEED | ff | ALL |
+|:------:|:--:|:------:|:----:|:-:|:-:|:-:|:-----:|:--:|:---:|
 
 ### Write
 This command writes the R, G, B, colors with the MODE selected at SPEED, optionally syncing all other regions with the field ALL.
@@ -99,8 +132,61 @@ In case the mode is Off, Cycling, Random, Wave, Water and Rainbow, the colors wi
 
 The device sends a confirmation
 
-| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
-|:-----------:|:--:|:------:|:--------:|
+| ANSWER | 00 | 00 (?) | 07 (OK?) |
+|:------:|:--:|:------:|:--------:|
+
+### Read header
+This command reads the addressable and non-addressable headers configurations:
+
+| 14 (READ HDR) | 00 | 01 (?) |
+|:-------------:|:--:|:------:|
+
+The device sends the answer still unknown.
+
+| ANSWER | 00 | 00 (?) | 01 (?) | 3f (?) |
+|:------:|:--:|:------:|:------:|:------:|
+
+This command reads the addressable headers configured addresses:
+
+| 14 (READ HDR) | 00 | 02 (ADDRESS CFG) |
+|:-------------:|:--:|:----------------:|
+
+The device answers in the following format:
+
+| ANSWER | 00 | 00 (?) | 02 (ADDRESS CFG) | 01 (?) | 01 (?) | ahdr0 ADDRESS | ahdr1 ADDRESS | 05 (?) | 07 (?) | 1e (?) | 1e (?) |
+|:------:|:--:|:------:|:----------------:|:------:|:------:|:-------------:|:-------------:|:------:|:------:|:------:|:------:|
+
+This command reads the headers RG swap:
+
+| 14 (READ HDR) | 00 | 03 (RGSWAP CFG) |
+|:-------------:|:--:|:---------------:|
+
+The device answers in the following format, see above the RGSwap identification for more information.
+
+| ANSWER | 00 | 00 (?) | 03 (RGSWAP CFG) | RGSwap |
+|:------:|:--:|:------:|:---------------:|:------:|
+
+### Write header
+This command configures the addressable and non-addressable headers RGSwap and selected addresses (when applied).
+
+To configure the addresses, where ahdr0 ADDRESS and ahdr1 ADDRESS are the adressable headers 0 and 1 LED addresses in hex:
+
+| 15 (WRITE HDR) | 00 | 00 (?) | 02 (ADDRESS CFG) | 01 (?) | 01 (?) | ahdr0 ADDRESS | ahdr1 ADDRESS | 05 (?) | 07 (?) | 1e (?) | 1e (?) |
+|:--------------:|:--:|:------:|:----------------:|:------:|:------:|:-------------:|:-------------:|:------:|:------:|:------:|:------:|
+
+The device sends a confirmation
+
+| ANSWER | 00 | 00 (?) | 07 (OK?) |
+|:------:|:--:|:------:|:--------:|
+
+To configure the RGSwap, send the following command:
+| 15 (WRITE HDR) | 00 | 00 (?) | 03 (RGSWAP CFG) | RGSWAP |
+|:--------------:|:--:|:------:|:---------------:|:------:|
+
+The device sends a confirmation
+
+| ANSWER | 00 | 00 (?) | 07 (OK?) |
+|:------:|:--:|:------:|:--------:|
 
 ### Command a4
 This is not yet identified. This is the first command to run when the Polychrome Sync software is initialized.
@@ -110,40 +196,8 @@ This is not yet identified. This is the first command to run when the Polychrome
 
 The answer received in the ASRock B550 Steel Legend is:
 
-| a6 (ANSWER) | 00 | 00 (?) | 00 (?) | 02 (?) |
-|:-----------:|:--:|:------:|:------:|:------:|
-
-
-### Command 14
-These commands are sent in the following order, after the a4 is sent in the Polychrome Sync initialization.
-
-| 14 (?) | 00 | 02 (?) |
-|:------:|:--:|:------:|
-
-The answer is 9 bytes that I will not write down here because I think it could be the device serial number.
-
-| a6 (ANSWER) | 00 | xxxxxxxxxxxxxxxxxx (?) |
-|:-----------:|:--:|:----------------------:|
-
-The second time the command is sent is:
-
-| 14 (?) | 00 | 03 (?) |
-|:------:|:--:|:------:|
-
-The answer is short and could be the device capabilities or the firmware version
-
-| a6 (ANSWER) | 00 | 00 (?) | 03 (?) | 4c (?) |
-|:-----------:|:--:|:------:|:------:|:------:|
-
-The third and last time the command is sent is:
-
-| 14 (?) | 00 | 01 (?) |
-|:------:|:--:|:------:|
-
-The answer is short and could be the device capabilities or the firmware version
-
-| a6 (ANSWER) | 00 | 00 (?) | 01 (?) | 3f (?) |
-|:-----------:|:--:|:------:|:------:|:------:|
+| ANSWER | 00 | 00 (?) | 00 (?) | 02 (?) |
+|:------:|:--:|:------:|:------:|:------:|
 
 ## The Music protocol
 In this mode, the Polychrome Sync software reads the sound output of the operating system and adds a byte with the corresponding intensity calculated by the program with an additional byte to the WRITE command. This is sent every 50\~60ms (16.66\~20Hz).
@@ -153,5 +207,5 @@ In this mode, the Polychrome Sync software reads the sound output of the operati
 
 The device sends a confirmation
 
-| a6 (ANSWER) | 00 | 00 (?) | 07 (OK?) |
-|:-----------:|:--:|:------:|:--------:|
+| ANSWER | 00 | 00 (?) | 07 (OK?) |
+|:------:|:--:|:------:|:--------:|
