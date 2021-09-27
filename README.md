@@ -37,3 +37,4 @@ make
 This software was confirmed working with the following boards:
 * B550 Steel Legend
 * B550 Phantom Gaming ITX/ax
+* B550 Taichi
