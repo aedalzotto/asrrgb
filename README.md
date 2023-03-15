@@ -19,7 +19,7 @@ To run as a normal user, give the udev permissions copying the file `60-asrrgb.r
 
 ### Arch Linux
 
-There is a `asrrgb-bin` package in AUR.
+There is a `asrrgb` package in AUR.
 
 ## Compiling from source
 
