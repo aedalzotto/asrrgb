@@ -25,8 +25,7 @@ Asrrgb::Asrrgb() :
 	if(libusb_init(&ctx) < 0)
 		throw std::runtime_error("failed to init libusb");
 
-	dev = libusb_open_device_with_vid_pid(ctx, 0x26ce, 0x01a2);
-	if(!dev)
+	if(!(dev = libusb_open_device_with_vid_pid(ctx, 0x26ce, 0x01a2)))
 		throw std::runtime_error("failed to open ASRock LED Controller, check permissions");
 
 	if(libusb_kernel_driver_active(dev, 0)){
@@ -49,8 +48,7 @@ Asrrgb::~Asrrgb()
 
 void Asrrgb::write(uint8_t region, uint8_t mode, uint32_t rgb, uint8_t speed, uint8_t all)
 {
-	std::array<uint8_t, 64> packet;
-	packet.fill(0);
+	std::array<uint8_t, 64> packet{};
 	packet[0] = 0x10;
 	packet[2] = region;
 	packet[3] = mode;
