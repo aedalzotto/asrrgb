@@ -69,15 +69,15 @@ public:
 	uint8_t get_all();
 
 private:
+	static std::unordered_map<std::string, std::pair<uint8_t, uint8_t>> const region_table;
+	static std::unordered_map<std::string, std::tuple<uint8_t, bool, bool>> const mode_table;
+
 	boost::program_options::options_description desc;
 	boost::program_options::variables_map vm;
 
-	std::string region;
-	std::string mode;
-	std::string color;
+	uint8_t region;
+	uint8_t mode;
+	uint32_t color;
 	int speed;
 	uint8_t all;
-
-	bool no_speed;
-	bool no_color;
 };
