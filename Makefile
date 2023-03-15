@@ -3,8 +3,8 @@ TARGET = asrrgb
 SRCDIR = src
 INCDIR = src/include
 
-CPPFLAGS = -I$(INCDIR) -O3 `pkg-config --cflags libusb-1.0` -Wall
-LDFLAGS = -l:libboost_program_options.a `pkg-config --libs libusb-1.0`
+CPPFLAGS = -I$(INCDIR) -std=c++17 -O3 `pkg-config --cflags libusb-1.0` -Wall
+LDFLAGS = -lboost_program_options `pkg-config --libs libusb-1.0`
 
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 OBJ = $(patsubst %.cpp, %.o, $(SRC))
