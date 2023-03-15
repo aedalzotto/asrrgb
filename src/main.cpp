@@ -23,26 +23,29 @@
 
 int main(int argc, char *argv[])
 {
-	Cmdline cmd(argc, argv);
-	if(cmd.is_help()){
-		std::cout << cmd.help() << std::endl;
+	auto cmd = std::make_unique<Cmdline>(argc, argv);
+
+	if(cmd->is_help()){
+		std::cout << cmd->help() << std::endl;
 		return 1;
 	}
-	try {
-		uint8_t region = cmd.get_region();
-		uint8_t mode = cmd.get_mode();
-		uint32_t rgb = cmd.get_rgb();
-		uint8_t speed = cmd.get_speed();
-		uint8_t all = cmd.get_all();
 
-		Asrrgb device;
-		device.write(region, mode, rgb, speed, all);
-	} catch(std::invalid_argument& e){
+	try {
+		uint8_t  region = cmd->get_region();
+		uint8_t  mode   = cmd->get_mode();
+		uint32_t rgb    = cmd->get_rgb();
+		uint8_t  speed  = cmd->get_speed();
+		uint8_t  all    = cmd->get_all();
+
+		auto device = std::make_unique<Asrrgb>();
+		device->write(region, mode, rgb, speed, all);
+	} catch(std::invalid_argument const& e){
 		std::cerr << e.what() << std::endl;
 		return -1;
-	} catch(std::runtime_error& e){
+	} catch(std::runtime_error const& e){
 		std::cerr << e.what() << std::endl;
 		return -1;
 	}
+
 	return 0;
 }
