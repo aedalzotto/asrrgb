@@ -20,7 +20,7 @@ $(SRCDIR)/%.o: $(SRCDIR)/%.cpp*
 	@$(CXX) -c $< -o $@ $(CPPFLAGS)
 
 clean:
-	@rm $(TARGET)
-	@rm $(SRCDIR)/*.o
+	@rm -f $(TARGET)
+	@rm -f $(SRCDIR)/*.o
 
 .PHONY: clean
